@@ -1,0 +1,228 @@
+---
+title: 'Practica 2  - Tipologia y ciclo de vida de los datos'
+author: "Autores: Luis Castro y Marc Valdivia Arriaza"
+date: "Diciembre 2019"
+output:
+  html_document:
+    highlight: default
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+    includes:
+      in_header: header.html
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Descripción del dataset. 
+¿Por qué es importante y qué pregunta/problema pretende responder? 
+
+Hemos elegido como dataset para esta practica el dataset de dsatos de supervivientes del titanic, el dtaset esta disponible en la pagina https://www.kaggle.com/c/titanic/data, actualemnte esta dispnoible como parte de un concurso de machine learning.
+
+Los datos estan en 2 archivos:
+
+- conjunto de entrenamiento (train.csv)
+- conjunto de prueba (test.csv)
+
+El conjunto de entrenamientotiene la intencion de ser usado  para la creacion de los modelos de aprendizaje. en el caso del  conjunto de entrenamiento se proporcionamos el resultado para cada pasajero. contienen informacion de los pasajeros y su intencion es tratar de adivinar el resultado de  cada pasajero en ese fatidico incidente.
+
+El conjunto de pruebaesta para probar y  ver qué tan bien funciona su modelo con datos no vistos. 
+
+
+el data set cuenta con los siguientes campos:
+
+- survival: (supervivencia)	0 = No, 1 = Yes
+- pclass	Ticket class: (clase del pasajero)	1 = 1st, 2 = 2nd, 3 = 3rd
+- sex	(genero)	
+- Age	(edad)
+- sibsp	(# heramanos o esposo/a)	
+- parch	(# padres hijos )
+- ticket	(Ticket number)id tiquete)	
+- fare	Passenger fare	(costo del pasaje)
+- cabin	(# cabina)
+- embarked	Port of Embarkation (puerto de embarque)	C = Cherbourg, Q = Queenstown, S = Southampton
+
+
+Este date set busca entender a partir de los distintos campos que se cuentan, las probabilidades de sobrevivir de acuerdo a las condiciones de cada pasajero. por ejemplo se cumplio el dicho de mujeres y niños primero? tuvieron alguna ventaja los pasajeros de las clases mas altas? cual fue la situacion con las familias? tenia mas psoibilidad e sobrevivir quien viajaba solo?
+
+
+# Integración y selección de los datos de interés a analizar
+
+Procedemos a cargar los datos:
+
+```{r message= FALSE, warning=FALSE}
+ds<-read.csv("train.csv", header=T, sep=",", na.strings=c("","na"))
+```
+
+verifiquemos las columnas cargadas
+```{r}
+colnames(ds)
+
+```
+
+numero de filas
+```{r}
+
+n <-nrow(ds)
+n
+```
+
+# Limpieza de los datos. 
+
+## ¿Los datos contienen ceros o elementos vacíos? ¿Cómo gestionarías cada uno de estos casos? 
+
+buscamos valores NA
+```{r}
+colSums(is.na(ds))
+
+```
+
+podemos ver que contamos con 177 NA o campos vacios en la variablea Age para la edad de los pasajeros
+
+se pueden tomar 2 caminos
+podriamos eliminar estos registros o podriaos asignar un valor a estos NA
+
+para este caso no podriamos eliminarlos pues son muchos (177) y esto podria afectar la precision de nuestro analisis.
+
+podriamos asignar el valor de la media a estos campos faltantes, pero si analizamos hombres y mujeres cuentan con distintas expectativas de vida, asi que calcularemos la media de los hombres y la media de las mujeres y lo asignaremos respectivamente.
+
+```{r}
+mujeres <-subset(ds, Sex == "female")
+str(mujeres)
+hombres <-subset(ds, Sex == "male")
+
+meanmujeres <- mean(mujeres$Age, na.rm= TRUE)
+
+meanhombres <- mean(hombres$Age, na.rm= TRUE)
+meanhombres
+meanmujeres
+```
+
+como sospechabamos la media de hombres y mujeres es diferente
+
+asignamo las respectivas medias a los valores NA de Age
+
+```{r}
+ds$Age[is.na(ds$Age) & ds$Sex=="male" ] <- meanhombres
+ds$Age[is.na(ds$Age) & ds$Sex=="female" ] <- meanmujeres
+```
+
+buscamos valores NA de nuevo
+```{r}
+colSums(is.na(ds))
+```
+
+ya no contamos con datos faltantes en edad, procedemos a solucionar el problema con embarked:
+
+en este caso contamos con solo 2 registros
+
+podemos tomar 2 caninos
+
+- podriamos eliminar los 2 registros pues son pocos
+- podriamos asignarlos a la categoria que cuenta con mas poblacion
+
+revisamos:
+```{r}
+ counts <- table(ds$Embarked)
+ barplot(counts, main="Embarked", col=c("darkblue","red", "yellow"),
+   xlab="Embarked")
+```
+
+observamos que S (Southampton) tiene la gran mayoria, los agregaremos a esta categoria
+```{r}
+ds$Embarked[is.na(ds$Embarked) ] <- "S"
+
+```
+
+confirmamos que ya no tenemos datos faltantes en embarked
+```{r}
+colSums(is.na(ds))
+```
+
+por ultimo tenemos Cabin
+
+en este caso tenemos una cantidad muy grande datos faltantes
+
+```{r}
+sum(is.na(ds$Cabin)) /n
+```
+
+tenemos el  77 % de pasajeros sin datos de cabina
+
+es un porcentaje muy alto, por lo tanto no vale la pena realmente eliminarlos pues quedariamos con muy pocos datos
+tampoco podemos buscar la forma de reemplazarlos, no tiene valor analitico decir que todos los pasajeros iban unos pocos cuartos.
+
+por lo tanto en este caso no tomaremos en cuenta los datos de cabinas para nuestro analisis
+
+removemos los datos de cabina
+```{r}
+ds <- subset( ds, select = -Cabin )
+
+colSums(is.na(ds))
+```
+
+
+Fare:
+
+a pesar de que ya pareciera que no tenemos Nas si observamos la columna Fare (costo del tiquete) vemos algunos registros con 0
+
+estos obviamente son valores perdidos pues nadie viaja gratis
+
+en este caso tampoco nos sirve eliminar los registros pq son bastantes, tampoco podemos usar la media para asignar.
+
+suponemos que el puerto de embarque es un fator que afecta la tarifa, pues entre mas largo podria ser mas caro
+
+tambien la clase del pasajero influye, no es lo mismo el precio de primera clase versus segunda clase.
+
+entonces segmentaremos por grupos y calcularemos la media para cada grupo tomando en cuenta la clase del pasajero asi como su puerto de embarque
+
+utilizamos la funcion summary by de libreria doBy
+```{r}
+library(doBy)
+
+medias <- summaryBy(Fare ~ Embarked + Pclass, data =ds, FUN = median)
+medias
+```
+
+asignamos los valores respectivamentes:
+```{r}
+ds$Fare[ds$Embarked =='C' & ds$Pclass == '1' & ds$Fare ==0] <- medias$Fare.median[1]
+ds$Fare[ds$Embarked =='C' & ds$Pclass == '2' & ds$Fare ==0] <- medias$Fare.median[2]
+ds$Fare[ds$Embarked =='C' & ds$Pclass == '3' & ds$Fare ==0] <- medias$Fare.median[3]
+ds$Fare[ds$Embarked =='Q' & ds$Pclass == '1' & ds$Fare ==0] <- medias$Fare.median[4]
+ds$Fare[ds$Embarked =='Q' & ds$Pclass == '2' & ds$Fare ==0] <- medias$Fare.median[5]
+ds$Fare[ds$Embarked =='Q' & ds$Pclass == '3' & ds$Fare ==0] <- medias$Fare.median[6]
+ds$Fare[ds$Embarked =='S' & ds$Pclass == '1' & ds$Fare ==0] <- medias$Fare.median[7]
+ds$Fare[ds$Embarked =='S' & ds$Pclass == '2' & ds$Fare ==0] <- medias$Fare.median[8]
+ds$Fare[ds$Embarked =='S' & ds$Pclass == '3' & ds$Fare ==0] <- medias$Fare.median[9]
+
+```
+
+
+ya contamos con todos nuestros datos completos
+
+ahora revisemos tipos de datos:
+
+```{r}
+
+str(ds)
+```
+survived y PCclass deberian ser factores
+
+```{r}
+ds$Survived <- factor(ds$Survived, labels =c("No", "Si"))
+ds$Pclass<- factor(ds$Pclass, labels =c("Tercera", "Segunda", "Primera"))
+```
+
+```{r}
+
+str(ds)
+```
