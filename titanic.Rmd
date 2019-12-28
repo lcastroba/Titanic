@@ -240,9 +240,8 @@ ds.tercera <- ds[ds$Pclass == "Tercera", ]
 ds.hombres <- ds[ds$Sex == "male", ]
 ds.mujeres <- ds[ds$Sex == "female", ]
 
-ds.embarked_c <- ds[ds$Embarked == "C", ]
-ds.embarked_q <- ds[ds$Embarked == "Q", ]
-ds.embarked_s <- ds[ds$Embarked == "S", ]
+ds.ninos <- ds[ds$Age < 16, ]
+ds.adultos <- ds[ds$Age >= 16, ]
 ```
 
 ## Comprobación de la normalidad y homogeneidad de la varianza
@@ -304,3 +303,48 @@ for (i in 1:(ncol(ds) - 1)) {
 print(corr_matrix)
 ```
 
+La matriz de correlación nos indica cuáles son las variables que más relación tienen con la salida de supervivencia. El atributo `Fare` es el que tiene un valor absoluto más cercano a 1, el siguiente sería `Parch` seguido de `Age` pero con una relación bastante más débil.
+
+A continuación realizaremos varios test de hipótesis para detectar como influyen los atributos categóricos entre ellos.
+```{r}
+ds.primera.survived <- ds[ds$Pclass == "Primera", ]$Survived
+ds.segunda.survived <- ds[ds$Pclass == "Segunda", ]$Survived
+ds.tercera.survived <- ds[ds$Pclass == "Tercera", ]$Survived
+
+
+ds.hombres.survived <- ds[ds$Sex == "male", ]$Survived
+ds.mujeres.survived <- ds[ds$Sex == "female", ]$Survived
+
+ds.ninos.survived <- ds[ds$Age < 16, ]$Survived
+ds.adultos.survived <- ds[ds$Age >= 16, ]$Survived
+```
+
+## Pasajeros de Primera vs resto
+```{r}
+t.test(rbind(ds.segunda.survived, ds.tercera.survived), ds.primera.survived, alternative = "less")
+```
+Al obtener un valor de p-value tan elevado no podemos indicar que los pasajeros de primera tuviesen más probabilidad de salvarse.
+
+## Pasajeros de Segunda vs resto
+```{r}
+t.test(rbind(ds.primera.survived, ds.tercera.survived), ds.segunda.survived, alternative = "less")
+```
+Lo mismo ocurre con los pasajeros de segunda.
+
+## Pasajeros de Tercera vs resto
+```{r}
+t.test(rbind(ds.primera.survived, ds.segunda.survived), ds.tercera.survived, alternative = "less")
+```
+Sin embargo, los pasajeros de tercera si que obtienen un valor p-value muy bajo. Lo que nos permite rechazar la hipótesis nula.
+
+## Hombres vs Mujeres
+```{r}
+t.test(ds.hombres.survived, ds.mujeres.survived, alternative = "less")
+```
+El valor del p-value es mucho menor de 0.05. Esto permite afirmar que las mujeres tenían una probabilidad mayor de salvarse y por lo que se cumple el dicho de mujeres primero.
+
+## Adultos vs Niños
+```{r}
+t.test(ds.adultos.survived, ds.ninos.survived, alternative = "less")
+```
+El valor del p-value es mucho menor de 0.05. Esto permite afirmar que los niños tenían una probabilidad mayor de salvarse y por lo que se cumple el dicho de niños primero.
