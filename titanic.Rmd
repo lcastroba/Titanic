@@ -178,7 +178,7 @@ estos obviamente son valores perdidos pues nadie viaja gratis
 
 en este caso tampoco nos sirve eliminar los registros pq son bastantes, tampoco podemos usar la media para asignar.
 
-suponemos que el puerto de embarque es un fator que afecta la tarifa, pues entre mas largo podria ser mas caro
+suponemos que el puerto de embarque es un factor que afecta la tarifa, pues entre mas largo podria ser mas caro
 
 tambien la clase del pasajero influye, no es lo mismo el precio de primera clase versus segunda clase.
 
@@ -218,7 +218,7 @@ str(ds)
 survived y PCclass deberian ser factores
 
 ```{r}
-ds$Survived <- factor(ds$Survived, labels =c("No", "Si"))
+# ds$Survived <- factor(ds$Survived, labels =c("No", "Si"))
 ds$Pclass<- factor(ds$Pclass, labels =c("Tercera", "Segunda", "Primera"))
 ```
 
@@ -226,3 +226,81 @@ ds$Pclass<- factor(ds$Pclass, labels =c("Tercera", "Segunda", "Primera"))
 
 str(ds)
 ```
+
+# Análisis de los datos
+
+## Selección de los grupos a analizar
+En primer lugar, seleccionaremos varios grupos de pasarejos en función de varias características para poder realizar un análisis estadístico.
+```{r}
+ds.priemra <- ds[ds$Pclass == "Primera", ]
+ds.segunda <- ds[ds$Pclass == "Segunda", ]
+ds.tercera <- ds[ds$Pclass == "Tercera", ]
+
+
+ds.hombres <- ds[ds$Sex == "male", ]
+ds.mujeres <- ds[ds$Sex == "female", ]
+
+ds.embarked_c <- ds[ds$Embarked == "C", ]
+ds.embarked_q <- ds[ds$Embarked == "Q", ]
+ds.embarked_s <- ds[ds$Embarked == "S", ]
+```
+
+## Comprobación de la normalidad y homogeneidad de la varianza
+```{r}
+#install.packages("nortest")
+library(nortest)
+
+alpha = 0.05
+col.names = colnames(ds)
+for (i in 1:ncol(ds)) {
+  if (i == 1) cat("Variables que no siguen una distribución normal:\n")
+  if (is.integer(ds[,i]) | is.numeric(ds[,i])) {
+    p_val = ad.test(ds[,i])$p.value
+    if (p_val < alpha) {
+      cat(col.names[i])
+      # Format output
+      if (i < ncol(ds) - 1) cat(", ")
+      if (i %% 3 == 0) cat("\n")
+    }
+  }
+}
+```
+De las variables que no siguen una distribución normal, podemos ignorar `PassengerId`, ya que hace referencia al identificador único del pasajero y no debe seguir ninguna distribución.
+
+A continuación estudiaremos la homegeneidad de varianzas con el test de Fliger-Killeen según el sexo y el tipo de clase donde se encontraban.
+```{r}
+fligner.test(Survived ~ Sex, data = ds)
+```
+
+```{r}
+fligner.test(Survived ~ Pclass, data = ds)
+```
+
+En ambos casos hemos obtenido un valor inferior a 0,05, por lo que tenemos que rechazar la hipótesis de que las varianzas son homogéneas en ninguno de los casos.
+
+# Pruebas estadísticas
+
+```{r}
+corr_matrix <- matrix(nc = 2, nr = 0)
+colnames(corr_matrix) <- c("estimate", "p-value")
+# Calcular el coeficiente de correlación para cada variable cuantitativa
+# con respecto al campo "precio"
+for (i in 1:(ncol(ds) - 1)) {
+  if (is.integer(ds[,i]) | is.numeric(ds[,i])) {
+    spearman_test = cor.test(ds[,i], ds$Survived, method = "pearson")
+    corr_coef = spearman_test$estimate
+    p_val = spearman_test$p.value
+    # Add row to matrix
+    pair = matrix(ncol = 2, nrow = 1)
+    pair[1][1] = corr_coef
+    pair[2][1] = p_val
+    corr_matrix <- rbind(corr_matrix, pair)
+    rownames(corr_matrix)[nrow(corr_matrix)] <- colnames(ds)[i]
+  }
+}
+```
+
+```{r}
+print(corr_matrix)
+```
+
