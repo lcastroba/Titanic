@@ -348,3 +348,4 @@ El valor del p-value es mucho menor de 0.05. Esto permite afirmar que las mujere
 t.test(ds.adultos.survived, ds.ninos.survived, alternative = "less")
 ```
 El valor del p-value es mucho menor de 0.05. Esto permite afirmar que los niños tenían una probabilidad mayor de salvarse y por lo que se cumple el dicho de niños primero.
+
