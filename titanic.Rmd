@@ -219,6 +219,7 @@ survived y PCclass deberian ser factores
 
 ```{r}
 ds$Pclass<- factor(ds$Pclass, labels =c("Primera", "Segunda", "Tercera"))
+ds$Survivedfactor<- factor(ds$Survived, labels =c("No", "Si"))
 ```
 
 creamos un campo facotr para la edad para difernciar ninos de adultos
@@ -490,3 +491,8 @@ plot(tabla_SST, col = c("red","blue"), main = "Sobrevivientes vs. Sex")
 
 
 # Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
+Los resultados obtenidos del análisis y la visualización de los datos nos han permitido ir respondiendo a las preguntas que se han generado. No solo de forma visual o gráfica, sino también con valores y pruebas estadísticas. Las preguntas más importantes (y que hemos podido resolver) han sido 3.
+- ¿Había mayor posibilidad de salvarse según el género? Sí, las mueheres tienen una tasa de superviviencia mucho mayor que los hombres, tanto estadísticamente como gráficamente-
+- ¿Había mayor posibilidad de salvarse para los niños? Sí, también se puede observar claramente en la tabla anterior o en las pruebas estadísticas.
+- ¿Había mayor posibilidad de salvarse según la clase del billete? Los pasajeros de primera clase tenían una probabilidad mayor de salvarse, los des segunda parece que sí gráficamente pero no podemos estar seguros estadísticamente y los pasajeros de tercera la respuesta es no com ambos métodos.
+También se ha podido comprobar que los atributos cuantitativos con más influencia sobre el resultado eran la edad `Age` (que relaciona adultos y niños), el `SibSp` (que indica familiaridad) y el `Fare` (que relaciona pasajeros de primera, segunda y tercera).
