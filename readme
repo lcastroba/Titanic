@@ -1,0 +1,61 @@
+# Titanic - Practica 2
+
+Luis Castro Badilla
+Marc Valdivia Arriaza
+
+lcastroba@uoc.edu
+marc.valdivia.arriaza@gmail.com
+
+Proyecto analitico de datos
+
+se analizan los datos de la tragedia del titanic disponibles en https://www.kaggle.com/c/titanic para tratar de entender como afectaban las caracteristicas de cada pasajero a su probabilidad de sobrevivir
+
+el trabajo fue elaborado en R,  bajo la modalidad R markdown (RMD)
+
+Para ejecutar el script son necesarias las siguientes librerias:
+
+- "gridExtra" 
+- "grid"      
+- "ggplot2"   
+- "nortest"   
+- "doBy"      
+- "stats"    
+- "graphics"  
+- "grDevices" 
+- "utils"     
+- "datasets"  
+- "methods"   
+- "base"
+
+
+el programa  carga el dataset en su formato CSV para luego limpiar los datos para hacer su respectivo analisis orientado a los resultados y probabilidades de superviviencia
+
+Extrae los siguientes campos:
+
+
+- survival: (supervivencia)	0 = No, 1 = Yes
+- pclass	Ticket class: (clase del pasajero)	1 = 1st, 2 = 2nd, 3 = 3rd
+- sex	(genero)	
+- Age	(edad)
+- sibsp	(# heramanos o esposo/a)	
+- parch	(# padres hijos )
+- ticket	(Ticket number)id tiquete)	
+- fare	Passenger fare	(costo del pasaje)
+- cabin	(# cabina)
+- embarked	Port of Embarkation (puerto de embarque)	C = Cherbourg, Q = Queenstown, S = Southampton
+
+se creaon 2 nuevos campos
+- AgeF: que es un campo factorial adulto o niño
+- Survivedfactor: el factor para sobrevivir "si" o "no"
+
+Archivos:
+
+header.html : archivo  header html para adornar el archivo resultante
+Predicciones.csv: archivo resultante del set de pruebas y la prediccion del modelo logistico
+test.csv : set para pruebas 
+train.csv: set de datos para entrenamiento y analisis
+titanic.html: archivo resultante del R markdown
+titanic.rmd: archivo con el codigo R de tipo R Markdown
+
+
+
