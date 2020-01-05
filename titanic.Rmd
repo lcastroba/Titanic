@@ -21,6 +21,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+![Titanic](TITANIC.jpg)
 
 # Descripción del dataset. 
 ¿Por qué es importante y qué pregunta/problema pretende responder? 
@@ -238,7 +239,7 @@ str(ds)
 
 
 ## Identificación y tratamiento de valores extremos
-para el tratamientode valores extremos usaremos las siguiente funcion toamda de
+para el tratamientode valores extremos usaremos las siguiente funcion toamda de https://datascienceplus.com/identify-describe-plot-and-removing-the-outliers-from-the-dataset/
 
 que funciona identificando, describendo los valores extremos. 
 usa el comando boxplot.stats () $ out, que utiliza el método de Tukey para identificar los valores atípicos que se encuentran por encima y por debajo del 1.5 * IQR. 
@@ -417,6 +418,122 @@ summary(modelo)
 ```
 Podemos extraer que la única variable numérica que no parece importante para el modelo lineal es `Parch`, el resto de ellas pareceb tener un código de significancia muy elevado.
 
+### modelo logistico
+
+```{r}
+
+ modelo.logit <- glm(Survivedfactor ~ Sex + AgeF + Pclass , data = ds,family = "binomial")
+summary(modelo.logit)
+
+```
+
+todos los P valores de  los regresores son menores 0.05 por lo tanto todos tienen influencia significativa
+
+ Interpretación
+
+
+
+revisemos
+```{r}
+exp(coefficients(modelo.logit))
+
+```
+
+
+podemos ver como ser nino te da una probabilidad 3 veces de salvarte que si eres adulto
+ser sexo maculino te disminuye en 97% las posibilidades de sobrevivir
+ser pasajero de segunda clase te disminuye en un 61 % las posibilidades de sobrevivir
+ser pasajero de tercera clase te disminuye en un 88 % las posibilidades de sobrevivir
+
+realicemos algunas prediciones para cer los rssultados
+
+supongamos una mujer adulta de 1 clase
+```{r}
+nuevo= data.frame(Sex="female",AgeF="adulto",Pclass="Primera")
+nuevo
+```
+
+```{r}
+ prediccion <- predict(modelo.logit, nuevo, type = "response" ) 
+prediccion
+```
+esta pasajero tendria un 90% de probabilidad de supervivencia
+
+comparemosla con una de mismas caracteristicas pero de tercera clase
+```{r}
+nuevo= data.frame(Sex="female",AgeF="adulto",Pclass="Tercera")
+nuevo
+```
+
+```{r}
+ prediccion <- predict(modelo.logit, nuevo, type = "response" ) 
+prediccion
+```
+
+sus probailidades ade sobrevivir bajan a un 54.7%
+
+todo parece indicar que los ninos tuvieron mas probabilidad de sobrevivir, pero comparemos la probabilidad de sobrevivir de un nino de primera clase versus uno de tercera.
+```{r}
+ninoprimera= data.frame(Sex="male",AgeF="nino",Pclass="Primera")
+ninotercera= data.frame(Sex="male",AgeF="nino",Pclass="Tercera")
+```
+
+```{r}
+prediccionnino1 <- predict(modelo.logit, ninoprimera, type = "response" ) 
+prediccionnino3 <- predict(modelo.logit, ninotercera, type = "response" ) 
+prediccionnino1
+prediccionnino3
+```
+con esto vemos como un nino de primera clase tenia una probabilidad de sobrevivir del 69.7% versus 22.8 del nino de tercera
+
+se podria decir que se cumplio el mujeres y ninos primero excepto si eres un nino de tercera clase
+
+tratemos de predecir con nuestro modelo logistico la supervivencia para el set de pruebas
+
+primero cargamos el set de pruebas
+```{r}
+
+dstest<-read.csv("test.csv", header=T, sep=",", na.strings=c("","na"))
+
+dstest$Pclass<- factor(dstest$Pclass, labels =c("Primera", "Segunda", "Tercera"))
+
+
+
+
+
+mujeres <-subset(dstest, Sex == "female")
+
+hombres <-subset(dstest, Sex == "male")
+
+meanmujeres <- mean(mujeres$Age, na.rm= TRUE)
+
+meanhombres <- mean(hombres$Age, na.rm= TRUE)
+
+
+
+dstest$Age[is.na(dstest$Age) & dstest$Sex=="male" ] <- meanhombres
+dstest$Age[is.na(dstest$Age) & dstest$Sex=="female" ] <- meanmujeres
+dstest$AgeF[dstest$Age < 16]<- "nino"
+dstest$AgeF[dstest$Age >= 16]<- "adulto"
+dstest$AgeF <- as.factor(dstest$AgeF)
+```
+
+ahora predecimos los resultados con nuestro modelo logistico
+
+```{r}
+resultados <- predict(modelo.logit,newdata=dstest,type='response')
+
+resultados <- ifelse(resultados > 0.5,"si","no")
+dstest$Survived <- resultados
+head(dstest,8)
+```
+
+guardamos en un archivo CSV el set de pruebas con las predicciones
+```{r}
+write.csv(dstest,'predicciones.csv')
+```
+
+
 # Representación de los resultados a partir de tablas y gráficas.
 ```{r}
 if(!require(ggplot2)){
@@ -487,12 +604,68 @@ par(mfrow=c(2,2))
 plot(tabla_SCT, col = c("red","blue"), main = "Sobrevivientes vs. Pclass")
 plot(tabla_SAT, col = c("red","blue"), main = "Sobrevivientes vs. AGE")
 plot(tabla_SST, col = c("red","blue"), main = "Sobrevivientes vs. Sex")
+
+(.packages())
 ```
 
 
+visualizacion de los datos predecidos por nuestro modelo logistico:
+
+
+```{r}
+tabla_SST <- table(dstest$Sex, dstest$Survived)
+tabla_SST
+prop.table(tabla_SST, margin = 1)
+```
+
+```{r}
+tabla_SCT <- table(dstest$Pclass,dstest$Survived)
+tabla_SCT
+prop.table(tabla_SCT, margin = 1)
+```
+
+```{r}
+tabla_SAT <- table(dstest$AgeF,dstest$Survived)
+tabla_SAT
+prop.table(tabla_SAT, margin = 1) 
+```
+
+```{r}
+tabla_SAT.byPclass <- table(dstest$AgeF,dstest$Survived,dstest$Pclass)
+tabla_SAT.byPclass
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(tabla_SCT, col = c("red","blue"), main = "Sobrevivientes vs. Pclass")
+plot(tabla_SAT, col = c("red","blue"), main = "Sobrevivientes vs. AGE")
+plot(tabla_SST, col = c("red","blue"), main = "Sobrevivientes vs. Sex")
+
+```
+
+nuestro modelo logistico se inclina fuertemente por  el sexo, matando a la mayoria de los hombres y salvando a todas las mujeres del conjunto de pruebas
+
+en las clases parece que hace un buen trabajo
+
 # Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?
+
 Los resultados obtenidos del análisis y la visualización de los datos nos han permitido ir respondiendo a las preguntas que se han generado. No solo de forma visual o gráfica, sino también con valores y pruebas estadísticas. Las preguntas más importantes (y que hemos podido resolver) han sido 3.
 - ¿Había mayor posibilidad de salvarse según el género? Sí, las mueheres tienen una tasa de superviviencia mucho mayor que los hombres, tanto estadísticamente como gráficamente-
 - ¿Había mayor posibilidad de salvarse para los niños? Sí, también se puede observar claramente en la tabla anterior o en las pruebas estadísticas.
 - ¿Había mayor posibilidad de salvarse según la clase del billete? Los pasajeros de primera clase tenían una probabilidad mayor de salvarse, los des segunda parece que sí gráficamente pero no podemos estar seguros estadísticamente y los pasajeros de tercera la respuesta es no com ambos métodos.
 También se ha podido comprobar que los atributos cuantitativos con más influencia sobre el resultado eran la edad `Age` (que relaciona adultos y niños), el `SibSp` (que indica familiaridad) y el `Fare` (que relaciona pasajeros de primera, segunda y tercera).
+
+
+# Contribuciones
+```{r}
+
+library(knitr)
+
+text_tbl <- data.frame(
+  Contribuciones = c( "Investigacion Previa", "Redacción de las respuestas", "Desarrollo código" ),
+  Firma = c( "LC, MV","LC, MV","LC, MV"
+  )
+)
+
+kable(text_tbl) 
+```
