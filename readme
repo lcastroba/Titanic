@@ -56,6 +56,7 @@ test.csv : set para pruebas
 train.csv: set de datos para entrenamiento y analisis
 titanic.html: archivo resultante del R markdown
 titanic.rmd: archivo con el codigo R de tipo R Markdown
+predicciones.csv: archivo con el set de datos resultante
 
 
 
